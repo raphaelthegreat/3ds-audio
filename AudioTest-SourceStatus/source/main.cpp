@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
         state.write().source_configurations->config[0].adpcm_dirty = false;
         state.write().source_configurations->config[0].is_looping = false;
         state.write().source_configurations->config[0].buffer_id = ++buffer_id;
-        state.write().source_configurations->config[0].use_queue_flag = true;
+        state.write().source_configurations->config[0].partial_reset_flag = true;
         state.write().source_configurations->config[0].play_position_dirty = true;
         state.write().source_configurations->config[0].embedded_buffer_dirty = true;
 
