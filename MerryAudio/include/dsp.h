@@ -147,8 +147,7 @@ struct SourceConfiguration {
             BitField<27, 1, u32_le> gain_2_dirty;
             BitField<28, 1, u32_le> sync_dirty;
             BitField<29, 1, u32_le> reset_flag;
-
-            BitField<31, 1, u32_le> embedded_buffer_dirty;
+            BitField<30, 1, u32_le> embedded_buffer_dirty;
         };
 
         // Gain control
