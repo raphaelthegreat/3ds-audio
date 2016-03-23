@@ -33,7 +33,7 @@ struct AudioState {
 
     array<array<u16*, 2>, 16> dsp_structs;
     array<SharedMem, 2> shared_mem;
-    u16 frame_id = 4;
+    u16 frame_id = 2;
 
     const SharedMem& read() const;
     const SharedMem& write() const;

@@ -68,11 +68,12 @@ int main(int argc, char **argv) {
     printf("init\n");
 
     {
-        for (size_t frame_count = 0; frame_count < 20; frame_count++) {
+        for (size_t frame_count = 0; frame_count < 19; frame_count++) {
             state.waitForSync();
             state.notifyDsp();
         }
 
+        printf("fi: %i\n", state.frame_id);
 
         u16 buffer_id = 0;
         size_t next_queue_position = 0;

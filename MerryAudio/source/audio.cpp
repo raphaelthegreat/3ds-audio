@@ -104,8 +104,8 @@ optional<AudioState> audioInit(vector<u8> dspfirm) {
         }
 
         for (int i = 0; i < 15; i++) {
-            const u16 addr0 = dsp_addrs[i];
-            const u16 addr1 = addr0 | 0x10000;
+            const u32 addr0 = static_cast<u32>(dsp_addrs[i]);
+            const u32 addr1 = static_cast<u32>(dsp_addrs[i]) | 0x10000;
             u32 vaddr0, vaddr1;
             VERIFY(DSP_ConvertProcessAddressFromDspDram(addr0, &vaddr0));
             VERIFY(DSP_ConvertProcessAddressFromDspDram(addr1, &vaddr1));
@@ -230,10 +230,10 @@ void initSharedMem(AudioState& state) {
 }
 
 const SharedMem& AudioState::write() const {
-    return shared_mem[frame_id % 2 == 1];
+    return shared_mem[frame_id % 2 == 0 ? 1 : 0];
 }
 const SharedMem& AudioState::read() const {
-    return shared_mem[frame_id % 2 == 0];
+    return shared_mem[frame_id % 2 == 1 ? 1 : 0];
 }
 
 void AudioState::waitForSync() {
