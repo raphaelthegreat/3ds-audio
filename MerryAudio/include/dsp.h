@@ -338,7 +338,8 @@ struct DspConfiguration {
         BitField<3, 1, u32_le> unknown13_dirty;
         BitField<4, 1, u32_le> unknown14_dirty;
         BitField<5, 1, u32_le> unknown15_dirty;
-
+        BitField<6, 1, u32_le> mixer1_partial_surround_dirty;
+        BitField<7, 1, u32_le> mixer2_partial_surround_dirty;
         BitField<8, 1, u32_le> mixer1_enabled_dirty;
         BitField<9, 1, u32_le> mixer2_enabled_dirty;
         BitField<10, 1, u32_le> delay_effect_0_dirty;
@@ -354,7 +355,7 @@ struct DspConfiguration {
         BitField<26, 1, u32_le> output_format_dirty;
         BitField<27, 1, u32_le> limiter_enabled_dirty;
         BitField<28, 1, u32_le> headphones_connected_dirty;
-
+        BitField<29, 1, u32_le> unknown19_dirty;
         BitField<30, 1, u32_le> unknown16_dirty;
         BitField<31, 1, u32_le> unknown18_dirty;
     };
@@ -375,11 +376,12 @@ struct DspConfiguration {
 
     u16_le limiter_enabled;      ///< Not sure of the exact gain equation for the limiter.
     u16_le headphones_connected; ///< Application updates the DSP on headphone status.
-    INSERT_PADDING_DSPWORDS(1);  ///< TODO: Surround sound related
+    u16 unknown19;
     u16 unknown16;
     u16 unknown15;
     u16 unknown18;
-    INSERT_PADDING_DSPWORDS(2);  ///< TODO: Intermediate mixer 1/2 related
+    u16_le mixer1_partial_surround;
+    u16_le mixer2_partial_surround;
     u16_le mixer1_enabled;
     u16_le mixer2_enabled;
 
