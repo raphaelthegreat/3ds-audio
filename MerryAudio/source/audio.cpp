@@ -166,6 +166,7 @@ void initSharedMem(AudioState& state) {
 
         {
             config.interpolation_mode = DSP::HLE::SourceConfiguration::Configuration::InterpolationMode::None;
+            config.interpolation_related = 0;
             config.interpolation_dirty = true;
         }
 

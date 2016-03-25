@@ -52,10 +52,10 @@ extern SharedMemory g_region1;
  */
 struct u32_dsp {
     u32_dsp() = default;
-    operator u32() const {
+    operator u32() const volatile {
         return Convert(storage);
     }
-    void operator=(u32 new_value) {
+    void operator=(u32 new_value) volatile {
         storage = Convert(new_value);
     }
 private:
@@ -167,13 +167,13 @@ struct SourceConfiguration {
         float_le rate_multiplier;
 
         enum class InterpolationMode : u8 {
-            None = 0,
+            Polyphase = 0,
             Linear = 1,
-            Polyphase = 2
+            None = 2
         };
 
         InterpolationMode interpolation_mode;
-        INSERT_PADDING_BYTES(1); ///< Interpolation related
+        u8 interpolation_related; ///< Interpolation related
 
         // Filters
 

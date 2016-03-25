@@ -9,7 +9,24 @@
 // High frequency square wave, PCM16
 void fillBuffer(u32 *audio_buffer, size_t size) {
     for (size_t i = 0; i < size; i++) {
-        u32 data = (i % 2 == 0 ? +1 : -1) * 30000;
+        u32 data;
+        switch (i % 5) {
+        case 0:
+            data = 0x1000;
+            break;
+        case 1:
+            data = 0x6000;
+            break;
+        case 2:
+            data = 0x4000;
+            break;
+        case 3:
+            data = 0x2000;
+            break;
+        case 4:
+            data = 0x5000;
+            break;
+        }
         audio_buffer[i] = (data<<16) | (data&0xFFFF);
     }
 
@@ -61,12 +78,24 @@ int main(int argc, char **argv) {
 
     state.waitForSync();
     initSharedMem(state);
+    state.write().dsp_configuration->mixer1_enabled_dirty = true;
+    state.write().dsp_configuration->mixer1_enabled = true;
+    //state.write().dsp_configuration->limiter_enabled = 1;
     state.notifyDsp();
     printf("init\n");
 
     state.waitForSync();
     state.notifyDsp();
     state.waitForSync();
+    for (auto& gain : state.write().source_configurations->config[0].gain) {
+        for (auto& g : gain) {
+            g = 0.0;
+        }
+    }
+    state.write().source_configurations->config[0].gain[0][0] = 1.0;
+    state.write().source_configurations->config[0].gain[1][0] = 1.0;
+    state.write().source_configurations->config[0].gain[1][1] = 0.5;
+    state.write().source_configurations->config[0].gain_1_dirty = true;
     state.notifyDsp();
     state.waitForSync();
     state.notifyDsp();
@@ -83,6 +112,7 @@ int main(int argc, char **argv) {
         printf("fi: %i\n", state.frame_id);
 
         u16 buffer_id = 0;
+        //unsigned next_queue_position = 0;
 
         state.write().source_configurations->config[0].play_position = 0;
         state.write().source_configurations->config[0].physical_address = osConvertVirtToPhys(audio_buffer);
@@ -110,11 +140,22 @@ int main(int argc, char **argv) {
                 printf("%i cbi = %i\n", frame_count, state.read().source_statuses->status[0].current_buffer_id);
             }
 
+            for (size_t i = 0; i < 160; i++) {
+                if (state.write().intermediate_mix_samples->mix1.pcm32[0][i]) {
+                    printf("[intermediate] frame=%i, sample=%i\n", frame_count, i);
+                    for (size_t j = 0; j < 20; j++) {
+                        printf("%08lx ", (u32)state.write().intermediate_mix_samples->mix1.pcm32[0][i+j]);
+                    }
+                    printf("\n");
+                    break;
+                }
+            }
+
             for (size_t i = 0; i < 160 * 2; i++) {
                 if (state.read().final_samples->pcm16[i]) {
-                    printf("frame=%i, sample=%i\n", frame_count, i);
+                    printf("[final] frame=%i, sample=%i\n", frame_count, i);
                     for (size_t j = 0; j < 20; j++) {
-                        printf("%i ", state.read().final_samples->pcm16[i+j]);
+                        printf("%04x ", (u16)state.read().final_samples->pcm16[i+j]);
                     }
                     printf("\n");
                     continue_reading = false;

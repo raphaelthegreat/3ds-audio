@@ -126,7 +126,7 @@ public:
     // Would they initialize the storage or just the bitfield?
     // Hence, delete them. Use the Assign method to set bitfield values!
     BitField(T val) = delete;
-    void operator=(const T& val) {
+    void operator=(const T& val) volatile {
         Assign(val);
     }
 
@@ -134,15 +134,15 @@ public:
     // so that we can use this within unions
     BitField() = default;
 
-    FORCE_INLINE operator T() const {
+    FORCE_INLINE operator T() const volatile {
         return Value();
     }
 
-    FORCE_INLINE void Assign(const T& value) {
+    FORCE_INLINE void Assign(const T& value) volatile {
         storage = (storage & ~GetMask()) | (((StorageType)value << position) & GetMask());
     }
 
-    FORCE_INLINE T Value() const {
+    FORCE_INLINE T Value() const volatile {
         if (std::numeric_limits<T>::is_signed)
         {
             std::size_t shift = 8 * sizeof(T)-bits;
@@ -155,7 +155,7 @@ public:
     }
 
     // TODO: we may want to change this to explicit operator bool() if it's bug-free in VS2015
-    FORCE_INLINE bool ToBool() const {
+    FORCE_INLINE bool ToBool() const volatile {
         return Value() != 0;
     }
 
@@ -171,7 +171,7 @@ private:
     // Unsigned version of StorageType
     typedef typename std::make_unsigned<StorageType>::type StorageTypeU;
 
-    FORCE_INLINE StorageType GetMask() const {
+    FORCE_INLINE StorageType GetMask() const volatile {
         return (((StorageTypeU)~0) >> (8 * sizeof(T)-bits)) << position;
     }
 
