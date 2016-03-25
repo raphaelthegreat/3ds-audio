@@ -197,11 +197,11 @@ struct SourceConfiguration {
          * Values are signed fixed point with 14 fractional bits.
          */
         struct BiquadFilter {
-            s16_le b0;
-            s16_le b1;
-            s16_le b2;
-            s16_le a1;
             s16_le a2;
+            s16_le a1;
+            s16_le b2;
+            s16_le b1;
+            s16_le b0;
         };
 
         union {
