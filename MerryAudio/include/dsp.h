@@ -180,7 +180,7 @@ struct SourceConfiguration {
         /**
          * This is the simplest normalized first-order digital recursive filter.
          * The transfer function of this filter is:
-         *     H(z) = b0 / (1 + a1 z^-1)
+         *     H(z) = b0 / (1 - a1 z^-1)
          * Values are signed fixed point with 15 fractional bits.
          */
         struct SimpleFilter {

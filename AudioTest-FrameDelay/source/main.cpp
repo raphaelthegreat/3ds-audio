@@ -144,7 +144,7 @@ int main(int argc, char **argv) {
                 if (state.write().intermediate_mix_samples->mix1.pcm32[0][i]) {
                     printf("[intermediate] frame=%i, sample=%i\n", frame_count, i);
                     for (size_t j = 0; j < 20; j++) {
-                        printf("%08lx ", (u32)state.write().intermediate_mix_samples->mix1.pcm32[0][i+j]);
+                        printf("%08lx ", (u32)state.write().intermediate_mix_samples->mix1.pcm32[0][j]);
                     }
                     printf("\n");
                     break;
@@ -155,7 +155,7 @@ int main(int argc, char **argv) {
                 if (state.read().final_samples->pcm16[i]) {
                     printf("[final] frame=%i, sample=%i\n", frame_count, i);
                     for (size_t j = 0; j < 20; j++) {
-                        printf("%04x ", (u16)state.read().final_samples->pcm16[i+j]);
+                        printf("%04x ", (u16)state.read().final_samples->pcm16[j]);
                     }
                     printf("\n");
                     continue_reading = false;

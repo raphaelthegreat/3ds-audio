@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
 
 #include <3ds.h>
 
@@ -60,11 +61,19 @@ int main(int argc, char **argv) {
     }
 
     {
+        /*
         const s16 b0 = 0.057200221035302035 * (1 << 14);
         const s16 b1 = 0.11440044207060407 * (1 << 14);
-        const s16 b2 = 0.057200221035302035 * (1 << 14);
+        const s16 b2 = 0.0238274928983472 * (1 << 14);
         const s16 a1 = -1.2188761083637 * (1 << 14);
         const s16 a2 = 0.44767699250490806 * (1 << 14);
+        */
+        srand(time(nullptr));
+        const s16 b0 = rand();
+        const s16 b1 = rand();
+        const s16 b2 = rand();
+        const s16 a1 = rand();
+        const s16 a2 = rand();
 
         array<s32, 160> expected_output;
         {
@@ -159,8 +168,8 @@ int main(int argc, char **argv) {
     }
 
 end:
-    waitForKey();
     audioExit(state);
+    waitForKey();
     gfxExit();
     return 0;
 }
