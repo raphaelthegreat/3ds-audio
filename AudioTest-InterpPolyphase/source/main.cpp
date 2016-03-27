@@ -10,9 +10,10 @@
 #include "audio.h"
 
 // Very slow triangle wave, mono PCM16
-void fillBuffer(s16 *audio_buffer, size_t size) {
+void fillBuffer(u32 *audio_buffer, size_t size) {
     for (size_t i = 0; i < size; i++) {
-        audio_buffer[i] = rand();
+        u32 data = i * 2;
+        audio_buffer[i] = ((-data)<<16) | ((data)&0xFFFF);
     }
 
     DSP_FlushDataCache(audio_buffer, size);
@@ -42,10 +43,8 @@ int main(int argc, char **argv) {
     consoleInit(GFX_BOTTOM, &botScreen);
     consoleSelect(&topScreen);
 
-    srand(time(nullptr));
-
     constexpr size_t NUM_SAMPLES = 160*200;
-    s16 *audio_buffer = (s16*)linearAlloc(NUM_SAMPLES * sizeof(s16));
+    u32 *audio_buffer = (u32*)linearAlloc(NUM_SAMPLES * sizeof(u32));
     fillBuffer(audio_buffer, NUM_SAMPLES);
 
     AudioState state;
@@ -64,34 +63,21 @@ int main(int argc, char **argv) {
     }
 
     {
-        float rate_multiplier = rand() % 512 / 128.f;
+        constexpr float rate_multiplier = 0.67f;
         printf("rate_multiplier = %f\n", rate_multiplier);
 
         array<s32, 160> expected_output;
-        array<bool, 160> bad;
         {
-            constexpr s32 scale = 1 << 16;
-            u32 scaled_rate = rate_multiplier * scale;
-            int fposition = -2 * scale;
+            int position = -2;
+            float fractional_position = 0.f;
             for (int i=0; i<160; i++) {
-                int position = fposition >> 16;
-                const s32 x0 = position+0 >= 0 ? audio_buffer[position+0] : 0;
-                const s32 x1 = position+1 >= 0 ? audio_buffer[position+1] : 0;
+                const s32 x0 = position > 0 ? position : 0;
 
-                s32 delta = x1 - x0;
-                if (delta > 0x7FFF) delta = 0x7FFF;
-                if (delta < -0x8000) delta = -0x8000;
+                fractional_position += rate_multiplier;
+                position += int(fractional_position);
+                fractional_position -= int(fractional_position);
 
-                u16 f0 = fposition & 0xFFFF;
-
-                if (f0) {
-                    expected_output[i] = x0 + ((f0 * delta) >> 16);
-                    bad[i] = abs(x0 - x1) > 0x8000;
-                } else {
-                    expected_output[i] = x0;
-                }
-
-                fposition += scaled_rate;
+                expected_output[i] = x0;
             }
         }
 
@@ -104,8 +90,6 @@ int main(int argc, char **argv) {
         state.notifyDsp();
         printf("init\n");
 
-        bool entered = false;
-        bool passed = true;
         {
             u16 buffer_id = 0;
 
@@ -127,8 +111,7 @@ int main(int argc, char **argv) {
 
             state.write().source_configurations->config[0].rate_multiplier = rate_multiplier;
             state.write().source_configurations->config[0].rate_multiplier_dirty = true;
-            state.write().source_configurations->config[0].interpolation_mode = DSP::HLE::SourceConfiguration::Configuration::InterpolationMode::Linear;
-            state.write().source_configurations->config[0].interpolation_related = 0;
+            state.write().source_configurations->config[0].interpolation_mode = DSP::HLE::SourceConfiguration::Configuration::InterpolationMode::Polyphase;
             state.write().source_configurations->config[0].interpolation_dirty = true;
 
             state.notifyDsp();
@@ -139,15 +122,9 @@ int main(int argc, char **argv) {
 
                 for (size_t i = 0; i < 160; i++) {
                     if (state.write().intermediate_mix_samples->mix1.pcm32[0][i]) {
-                        entered = true;
                         printf("[intermediate] frame=%i, sample=%i\n", frame_count, i);
-                        for (size_t j = 0; j < 160; j++) {
-                            s32 real = (s32)state.write().intermediate_mix_samples->mix1.pcm32[0][j];
-                            s32 expect = (s32)expected_output[j];
-                            if (real != expect) {
-                                printf("[%i] real=%08lx expect=%08lx %s\n", j, real, expect, bad[j] ? "bad" : "");
-                                passed = false;
-                            }
+                        for (size_t j = 0; j < 60; j++) {
+                            printf("%08lx ", (u32)state.write().intermediate_mix_samples->mix1.pcm32[0][j]);
                         }
                         continue_reading = false;
                         printf("\n");
@@ -158,12 +135,12 @@ int main(int argc, char **argv) {
                 state.notifyDsp();
             }
 
-            printf("Done!\n");
-            if (entered && passed) {
-                printf("Test passed!\n");
-            } else {
-                printf("FAIL\n");
+            printf("expect:\n");
+            for (size_t j = 0; j < 60; j++) {
+                printf("%08lx ", (u32)expected_output[j]);
             }
+
+            printf("Done!\n");
         }
     }
 
