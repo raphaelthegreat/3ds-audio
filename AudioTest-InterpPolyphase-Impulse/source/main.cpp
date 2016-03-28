@@ -9,12 +9,12 @@
 
 #include "audio.h"
 
-// Very slow triangle wave, mono PCM16
-void fillBuffer(u32 *audio_buffer, size_t size) {
+// Impuse function, mono PCM16
+void fillBuffer(s16 *audio_buffer, size_t size) {
     for (size_t i = 0; i < size; i++) {
-        u32 data = i * 2;
-        audio_buffer[i] = ((-data)<<16) | ((data)&0xFFFF);
+        audio_buffer[i] = 0;
     }
+    audio_buffer[0] = 0x7FFF;
 
     DSP_FlushDataCache(audio_buffer, size);
 }
@@ -43,8 +43,42 @@ int main(int argc, char **argv) {
     consoleInit(GFX_BOTTOM, &botScreen);
     consoleSelect(&topScreen);
 
+    unsigned coefficient_select = 0;
+    printf("[A]: coefficients 0 \n");
+    printf("[B]: coefficients 1 \n");
+    printf("[X]: coefficients 2 \n");
+    printf("[Y]: coefficients 3 \n");
+    while (aptMainLoop()) {
+        gfxSwapBuffers();
+        gfxFlushBuffers();
+        gspWaitForVBlank();
+
+        hidScanInput();
+        u32 kDown = hidKeysDown();
+
+        if (kDown & KEY_A){
+            coefficient_select = 0;
+            break;
+        }
+        if (kDown & KEY_B){
+            coefficient_select = 1;
+            break;
+        }
+        if (kDown & KEY_X){
+            coefficient_select = 2;
+            break;
+        }
+        if (kDown & KEY_Y){
+            coefficient_select = 3;
+            break;
+        }
+    }
+    printf("coefficients = %u\n", coefficient_select);
+
+    srand(time(nullptr));
+
     constexpr size_t NUM_SAMPLES = 160*200;
-    u32 *audio_buffer = (u32*)linearAlloc(NUM_SAMPLES * sizeof(u32));
+    s16 *audio_buffer = (s16*)linearAlloc(NUM_SAMPLES * sizeof(s16));
     fillBuffer(audio_buffer, NUM_SAMPLES);
 
     AudioState state;
@@ -63,23 +97,8 @@ int main(int argc, char **argv) {
     }
 
     {
-        constexpr float rate_multiplier = 0.67f;
+        float rate_multiplier = 0.025f;
         printf("rate_multiplier = %f\n", rate_multiplier);
-
-        array<s32, 160> expected_output;
-        {
-            int position = -2;
-            float fractional_position = 0.f;
-            for (int i=0; i<160; i++) {
-                const s32 x0 = position > 0 ? position : 0;
-
-                fractional_position += rate_multiplier;
-                position += int(fractional_position);
-                fractional_position -= int(fractional_position);
-
-                expected_output[i] = x0;
-            }
-        }
 
         state.waitForSync();
         initSharedMem(state);
@@ -90,6 +109,8 @@ int main(int argc, char **argv) {
         state.notifyDsp();
         printf("init\n");
 
+        bool entered = false;
+        bool passed = true;
         {
             u16 buffer_id = 0;
 
@@ -112,6 +133,7 @@ int main(int argc, char **argv) {
             state.write().source_configurations->config[0].rate_multiplier = rate_multiplier;
             state.write().source_configurations->config[0].rate_multiplier_dirty = true;
             state.write().source_configurations->config[0].interpolation_mode = DSP::HLE::SourceConfiguration::Configuration::InterpolationMode::Polyphase;
+            state.write().source_configurations->config[0].interpolation_related = coefficient_select;
             state.write().source_configurations->config[0].interpolation_dirty = true;
 
             state.notifyDsp();
@@ -122,9 +144,11 @@ int main(int argc, char **argv) {
 
                 for (size_t i = 0; i < 160; i++) {
                     if (state.write().intermediate_mix_samples->mix1.pcm32[0][i]) {
+                        entered = true;
                         printf("[intermediate] frame=%i, sample=%i\n", frame_count, i);
-                        for (size_t j = 0; j < 60; j++) {
-                            printf("%08lx ", (u32)state.write().intermediate_mix_samples->mix1.pcm32[0][j]);
+                        for (size_t j = 0; j < 120; j++) {
+                            s32 real = (s32)state.write().intermediate_mix_samples->mix1.pcm32[0][j];
+                            printf("%08lx ", (u32)real);
                         }
                         continue_reading = false;
                         printf("\n");
@@ -135,12 +159,12 @@ int main(int argc, char **argv) {
                 state.notifyDsp();
             }
 
-            printf("expect:\n");
-            for (size_t j = 0; j < 60; j++) {
-                printf("%08lx ", (u32)expected_output[j]);
-            }
-
             printf("Done!\n");
+            if (entered && passed) {
+                printf("Test passed!\n");
+            } else {
+                printf("FAIL\n");
+            }
         }
     }
 
