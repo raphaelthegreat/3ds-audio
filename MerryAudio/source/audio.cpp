@@ -234,7 +234,7 @@ const SharedMem& AudioState::write() const {
     return shared_mem[frame_id % 2 == 1 ? 1 : 0];
 }
 const SharedMem& AudioState::read() const {
-    return shared_mem[frame_id % 2 == 0 ? 1 : 0];
+    return shared_mem[frame_id % 2 == 1 ? 1 : 0];
 }
 
 void AudioState::waitForSync() {
