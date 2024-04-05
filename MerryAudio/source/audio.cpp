@@ -59,7 +59,7 @@ optional<AudioState> audioInit(vector<u8> dspfirm) {
         }
     }
 
-    VERIFY(svcCreateEvent(&ret.pipe2_irq, 1));
+    VERIFY(svcCreateEvent(&ret.pipe2_irq, RESET_STICKY));
 
     // interrupt type == 2 (pipe related)
     // pipe channel == 2 (audio pipe)
